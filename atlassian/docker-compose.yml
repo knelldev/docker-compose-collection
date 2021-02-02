@@ -1,0 +1,109 @@
+version: '3'
+services:
+  jira:
+    container_name: jira
+    restart: unless-stopped
+    depends_on:
+      - jiradb
+    image: atlassian/jira-software:8.13
+    networks:
+      - devnet
+    volumes:
+      - /data/atlassian/jira:/var/atlassian/application-data/jira
+    ports:
+      - '8080:8080'
+    environment:
+      - 'ATL_JDBC_URL=jdbc:postgresql://jiradb:5432/jiradb'
+      - 'ATL_JDBC_USER=jira'
+      # CHANGE THE PASSWOR
+      - 'ATL_JDBC_PASSWORD=password'
+      - 'ATL_DB_DRIVER=org.postgresql.Driver'
+      - 'ATL_DB_TYPE=postgres72'
+      - 'JVM_MINIMUM_MEMORY=512m'
+      - 'JVM_MAXIMUM_MEMORY=1024m'
+      - 'ATL_PROXY_NAME=jira.localhost'
+      - 'ATL_PROXY_PORT=443'
+      - 'ATL_TOMCAT_SCHEME=https'
+    logging:
+      # limit logs retained on host to 25MB
+      driver: "json-file"
+      options:
+        max-size: "500k"
+        max-file: "50"
+  confluence:
+    container_name: confluence
+    restart: unless-stopped
+    depends_on:
+      - confluencedb
+    image: atlassian/confluence-server:7.4
+    networks:
+      - devnet
+    volumes:
+      - /data/atlassian/confluence:/var/atlassian/application-data/confluence
+    ports:
+      - '8090:8090'
+      - "8091:8091"
+    environment:
+      - 'ATL_JDBC_URL=jdbc:postgresql://confluencedb:5432/confluencedb'
+      - 'ATL_JDBC_USER=confluence'
+      # CHANGE THE PASSWOR
+      - 'ATL_JDBC_PASSWORD=password'
+      - 'ATL_DB_TYPE=postgresql'
+      - 'JVM_MINIMUM_MEMORY=512m'
+      - 'JVM_MAXIMUM_MEMORY=1024m'
+      - ATL_PROXY_NAME=confluence.localhost
+      - ATL_PROXY_PORT=443
+      - ATL_TOMCAT_SCHEME=https
+    logging:
+      # limit logs retained on host to 25MB
+      driver: "json-file"
+      options:
+        max-size: "500k"
+        max-file: "50"
+  jiradb:
+    container_name: jiradb
+    restart: unless-stopped
+    image: postgres:11-alpine
+    networks:
+      - devnet
+    volumes:
+      - /data/atlassian/jiradb:/var/lib/postgresql/data
+    environment:
+      - 'POSTGRES_USER=jira'
+      # CHANGE THE PASSWORD!
+      - 'POSTGRES_PASSWORD=password'
+      - 'POSTGRES_DB=jiradb'
+      - 'POSTGRES_ENCODING=UNICODE'
+      - 'POSTGRES_COLLATE=C'
+      - 'POSTGRES_COLLATE_TYPE=C'
+    logging:
+      # limit logs retained on host to 25MB
+      driver: "json-file"
+      options:
+        max-size: "500k"
+        max-file: "50"
+  confluencedb:
+    container_name: confluencedb
+    image: postgres:11-alpine
+    restart: unless-stopped
+    networks:
+      - devnet
+    volumes:
+      - /data/atlassian/confluencedb:/var/lib/postgresql/data
+    environment:
+      - 'POSTGRES_USER=confluence'
+      # CHANGE THE PASSWORD!
+      - 'POSTGRES_PASSWORD=password'
+      - 'POSTGRES_DB=confluencedb'
+      - 'POSTGRES_ENCODING=UTF8'
+      - 'POSTGRES_COLLATE=C'
+      - 'POSTGRES_COLLATE_TYPE=C'
+    logging:
+      # limit logs retained on host to 25MB
+      driver: "json-file"
+      options:
+        max-size: "500k"
+        max-file: "50"
+networks:
+  devnet:
+    driver: bridge

@@ -1,0 +1,122 @@
+version: "3"
+services:
+  jellyfin:
+    container_name: jellyfin
+    image: jellyfin/jellyfin
+    restart: unless-stopped
+    ports:
+      - 8096:8096
+    volumes:
+      - ./jellyfin/config:/config
+      - ./jellyfin/cache:/cache
+      - "${TVDIR}:/media/tv"
+      - "${MOVIESDIR}:/media/movies"
+      - /etc/localtime:/etc/localtime:ro
+    user: "1001:1001"
+  sonarr:
+    container_name: sonarr
+    image: linuxserver/sonarr:preview
+    restart: unless-stopped
+    depends_on:
+      - jackett
+    ports:
+      - 8989:8989
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ./sonarr:/config
+      - ${DLDIR}/completed:/downloads/completed
+      - ${TVDIR}:/tv
+      - /etc/localtime:/etc/localtime:ro
+  radarr:
+    container_name: radarr
+    image: linuxserver/radarr
+    restart: unless-stopped
+    depends_on:
+      - jackett
+    ports:
+      - 7878:7878
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ./radarr:/config
+      - ${DLDIR}/completed:/downloads/completed
+      - ${MOVIESDIR}:/movies
+      - /etc/localtime:/etc/localtime:ro
+  lidarr:
+    container_name: lidarr
+    image: linuxserver/lidarr
+    restart: unless-stopped
+    depends_on:
+      - jackett
+    ports:
+      - 8686:8686
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ./lidarr:/config
+      - ${DLDIR}:/downloads
+      - ${MUSICDIR}:/music
+      - /etc/localtime:/etc/localtime:ro
+  jackett:
+    image: linuxserver/jackett:development
+    container_name: jackett
+    restart: unless-stopped
+    ports:
+      - 9117:9117
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+      - ./jackett:/config
+      - ${DLDIR}/completed:/downloads
+      - /etc/localtime:/etc/localtime:ro
+  ombi:
+    image: linuxserver/ombi
+    container_name: ombi
+    restart: unless-stopped
+    depends_on:
+      - radarr
+      - sonarr
+      - lidarr
+    ports:
+      - 3579:3579
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+      - ./ombi:/config
+      - /etc/localtime:/etc/localtime:ro
+#  watchtower:
+#    image: containrrr/watchtower
+#    container_name: watchtower
+#    restart: always
+#    volumes:
+#      - /var/run/docker.sock:/var/run/docker.sock
+#      - /root/.docker/config.json:/config.json
+#    command: watchtower jellyfin sonarr radarr jackett deluge --schedule '0 0 0 * * *'  --cleanup --debug 
+#    environment:
+#      - TZ='Europe/Berlin'
+#  qbittorent:
+#    image: linuxserver/qbittorrent
+#    container_name: qbittorrent
+#    ports:
+#      - 6881:6881
+#      - 6881:6881/udp
+#      - 8080:8080
+#    environment:
+#      - PUID=${PUID}
+#      - PGID=${PGID}
+#      - TZ=Europe/London
+#      - UMASK_SET=022
+#      - WEBUI_PORT=8080
+#    volumes:
+#      - ${DLDIR}:/downloads
+#      - ./qbittorrent:/config
+#    restart: unless-stopped

@@ -1,0 +1,20 @@
+---
+version: "2.1"
+services:
+  code-server:
+    image: linuxserver/code-server
+    container_name: code-server
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+      # CHANGE THE PASSWORD!
+      - PASSWORD=password #optional
+      # CHANGE THE PASSWORD!
+      - SUDO_PASSWORD=password #optional
+    volumes:
+      - ./config:/config
+      - ./data:/data
+    ports:
+      - 8443:8443
+    restart: unless-stopped

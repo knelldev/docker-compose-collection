@@ -1,0 +1,59 @@
+version: '3'
+services:
+  postgres:
+    image: postgres
+    restart: unless-stopped
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password
+  keycloak:
+    image: jboss/keycloak
+    restart: unless-stopped
+    environment:
+      DB_VENDOR: POSTGRES
+      DB_ADDR: postgres
+      DB_USER: keycloak
+      # CHANGE THE PASSWORD!
+      DB_PASSWORD: password
+      KEYCLOAK_USER: admin
+      # CHANGE THE PASSWORD!
+      KEYCLOAK_PASSWORD: password
+      #JDBC_PARAMS: "ssl=true"
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres
+    volumes:
+      - ./themes:/opt/jboss/keycloak/themes/custome/:rw
+  openldap:
+    image: osixia/openldap
+    restart: unless-stopped
+    volumes:
+        - ./ldap/lib:/var/lib/ldap
+        - ./ldap/config:/etc/ldap/slapd.d 
+    environment:
+      LDAP_ORGANISATION: "localhost"
+      LDAP_DOMAIN: "localhost"
+      LDAP_BASE_DN: ""
+      # CHANGE THE PASSWORD!
+      LDAP_ADMIN_PASSWORD: "password"
+      LDAP_READONLY_USER: "true"
+      # CHANGE THE PASSWORD!
+      LDAP_READONLY_USER_USERNAME: "readonly"
+      LDAP_READONLY_USER_PASSWORD: "password"
+    ports:
+      - 389:389
+      - 636:636
+  phpldapadmin:
+    image: osixia/phpldapadmin
+    restart: unless-stopped
+    environment:
+      PHPLDAPADMIN_LDAP_HOSTS: '10.0.10.5'
+      PHPLDAPADMIN_HTTPS: 'false'
+    ports:
+      - 8081:80
+    depends_on:
+      - openldap
